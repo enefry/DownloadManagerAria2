@@ -12,7 +12,7 @@ pull the libaria2 binary or GPL-licensed components.
 Add this package only in products that need aria2-backed protocols:
 
 ```swift
-.package(url: "https://github.com/enefry/DownloadManagerAria2.git", from: "0.1.0")
+.package(url: "https://github.com/enefry/DownloadManagerAria2.git", from: "1.0.0")
 ```
 
 Then depend on:
@@ -53,6 +53,19 @@ scripts/build-libaria2-xcframework.sh
 DOWNLOAD_MANAGER_PACKAGE_PATH=../DownloadManager \
 LIBARIA2_XCFRAMEWORK_PATH=artifacts/libaria2/libaria2.xcframework \
 swift test
+```
+
+The released package depends on a tagged DownloadManager release. Local and CI
+builds can override that dependency:
+
+```sh
+DOWNLOAD_MANAGER_BRANCH=master swift test
+```
+
+or:
+
+```sh
+DOWNLOAD_MANAGER_VERSION=1.0.0 swift test
 ```
 
 The local checkout layout used by CI is:
@@ -105,7 +118,7 @@ After packaging, update the remote binary target URL and checksum with:
 
 ```sh
 scripts/update-libaria2-binary-target.sh \
-  "https://github.com/enefry/DownloadManagerAria2/releases/download/libaria2-1.37.0/libaria2.xcframework.zip" \
+  "https://github.com/enefry/DownloadManagerAria2/releases/download/1.0.0/libaria2.xcframework.zip" \
   "$(cat dist/libaria2.xcframework.zip.checksum)"
 ```
 
@@ -113,6 +126,18 @@ The full rebuild requires Xcode command line tools, autotools, and Apple SDKs.
 CI performs the same build/verify/package flow and uploads the zip/checksum as
 workflow artifacts. The `Release libaria2` workflow can publish the release
 asset and commit the updated `Package.swift`.
+
+## Versioning
+
+GitHub Actions publishes SwiftPM source package versions. The release workflow
+builds `libaria2.xcframework.zip`, updates `Package.swift` with the release
+asset URL and checksum, commits that manifest change, creates a semantic
+version tag, and attaches the zip/checksum files to the same GitHub Release.
+
+`main`/`master` publish the latest major line and auto-increment the last
+version component. Maintenance branches named like `v1.0_maint` publish only
+that line and auto-increment `1.0.x`. When no matching tag exists, the default
+initial version is `1.0.0`.
 
 The build scripts fetch aria2 from upstream `release-1.37.0` into ignored
 `third_party/aria2` when the source tree is not already present, then apply

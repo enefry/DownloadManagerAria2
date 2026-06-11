@@ -43,7 +43,7 @@ After packaging, update the manifest with:
 
 ```sh
 scripts/update-libaria2-binary-target.sh \
-  "https://github.com/enefry/DownloadManagerAria2/releases/download/libaria2-1.37.0/libaria2.xcframework.zip" \
+  "https://github.com/enefry/DownloadManagerAria2/releases/download/1.0.0/libaria2.xcframework.zip" \
   "$(cat dist/libaria2.xcframework.zip.checksum)"
 ```
 
@@ -55,3 +55,10 @@ scripts/update-libaria2-binary-target.sh \
 
 The build is trimmed to system dynamic dependencies only. The ObjC wrapper is
 linked into the same `libaria2.0.dylib`.
+
+## Release Versioning
+
+The `Release libaria2` workflow publishes SwiftPM source versions. It updates
+`Package.swift`, commits the binary target URL/checksum, creates the semantic
+version tag, and attaches `libaria2.xcframework.zip` to that same release.
+Branches named like `v1.0_maint` auto-increment only the `1.0.x` line.

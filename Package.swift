@@ -5,8 +5,16 @@ import PackageDescription
 let downloadManagerDependency: Package.Dependency
 if let localPath = ProcessInfo.processInfo.environment["DOWNLOAD_MANAGER_PACKAGE_PATH"], !localPath.isEmpty {
     downloadManagerDependency = .package(path: localPath)
+} else if let branch = ProcessInfo.processInfo.environment["DOWNLOAD_MANAGER_BRANCH"], !branch.isEmpty {
+    downloadManagerDependency = .package(url: "https://github.com/enefry/DownloadManager.git", branch: branch)
+} else if let version = ProcessInfo.processInfo.environment["DOWNLOAD_MANAGER_VERSION"], !version.isEmpty {
+    guard let parsedVersion = Version(version) else {
+        fatalError("DOWNLOAD_MANAGER_VERSION must be a semantic version, got \(version)")
+    }
+
+    downloadManagerDependency = .package(url: "https://github.com/enefry/DownloadManager.git", from: parsedVersion)
 } else {
-    downloadManagerDependency = .package(url: "https://github.com/enefry/DownloadManager.git", branch: "master")
+    downloadManagerDependency = .package(url: "https://github.com/enefry/DownloadManager.git", from: "1.0.0")
 }
 
 let defaultLibaria2BinaryURL = "https://github.com/enefry/DownloadManagerAria2/releases/download/libaria2-1.37.0/libaria2.xcframework.zip"
