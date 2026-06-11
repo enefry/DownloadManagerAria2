@@ -1,0 +1,10 @@
+.build/
+.swiftpm/
+build/
+artifacts/
+dist/
+third_party/
+DerivedData/
+*.xcresult
+Package.resolved
+.DS_Store

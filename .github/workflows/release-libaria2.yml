@@ -1,0 +1,127 @@
+name: Release libaria2
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "GitHub Release tag that will host libaria2.xcframework.zip"
+        required: true
+        default: "libaria2-1.37.0"
+      commit_manifest:
+        description: "Commit the Package.swift URL/checksum update"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, package, update manifest, and release
+    runs-on: macos-15
+    steps:
+      - name: Checkout DownloadManagerAria2
+        uses: actions/checkout@v4
+        with:
+          path: DownloadManagerAria2
+          fetch-depth: 0
+
+      - name: Checkout DownloadManager
+        uses: actions/checkout@v4
+        with:
+          repository: enefry/DownloadManager
+          path: DownloadManager
+
+      - name: Checkout ConcurrencyCollection
+        uses: actions/checkout@v4
+        with:
+          repository: enefry/ConcurrencyCollection
+          path: ConcurrencyCollection
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Install build tools
+        run: brew install autoconf automake libtool
+
+      - name: Build libaria2 XCFramework
+        working-directory: DownloadManagerAria2
+        run: scripts/build-libaria2-xcframework.sh
+
+      - name: Verify libaria2 XCFramework
+        working-directory: DownloadManagerAria2
+        run: scripts/verify-libaria2-xcframework.sh
+
+      - name: Package libaria2 XCFramework
+        working-directory: DownloadManagerAria2
+        run: scripts/package-libaria2-xcframework.sh
+
+      - name: Update Package.swift binary target
+        working-directory: DownloadManagerAria2
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          checksum="$(cat dist/libaria2.xcframework.zip.checksum)"
+          url="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}/libaria2.xcframework.zip"
+          scripts/update-libaria2-binary-target.sh "$url" "$checksum"
+          echo "LIBARIA2_CHECKSUM=$checksum" >> "$GITHUB_ENV"
+          echo "LIBARIA2_URL=$url" >> "$GITHUB_ENV"
+
+      - name: Validate Swift package with local XCFramework
+        working-directory: DownloadManagerAria2
+        env:
+          DOWNLOAD_MANAGER_PACKAGE_PATH: ../DownloadManager
+          LIBARIA2_XCFRAMEWORK_PATH: artifacts/libaria2/libaria2.xcframework
+          SWIFT_MODULE_CACHE_PATH: .build/ci-swift-module-cache
+          CLANG_MODULE_CACHE_PATH: .build/ci-swift-module-cache
+        run: |
+          swift build --target DownloadManager_Aria2Downloader \
+            --cache-path .build/ci-spm-cache \
+            --disable-index-store \
+            --jobs 1
+          swift test --filter Aria2DownloaderTests \
+            --cache-path .build/ci-spm-cache \
+            --disable-index-store \
+            --jobs 1
+
+      - name: Commit Package.swift update
+        if: ${{ inputs.commit_manifest }}
+        working-directory: DownloadManagerAria2
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Package.swift
+          git commit -m "Update libaria2 binary target for ${{ inputs.release_tag }}" || echo "Package.swift already up to date"
+          git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Create or update GitHub Release
+        working-directory: DownloadManagerAria2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          notes="libaria2.xcframework.zip
+
+SwiftPM checksum:
+\`${LIBARIA2_CHECKSUM}\`
+
+URL:
+${LIBARIA2_URL}"
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" \
+              dist/libaria2.xcframework.zip \
+              dist/libaria2.xcframework.zip.checksum \
+              dist/libaria2.xcframework.zip.sha256 \
+              --clobber
+          else
+            gh release create "$RELEASE_TAG" \
+              dist/libaria2.xcframework.zip \
+              dist/libaria2.xcframework.zip.checksum \
+              dist/libaria2.xcframework.zip.sha256 \
+              --target HEAD \
+              --title "$RELEASE_TAG" \
+              --notes "$notes"
+          fi

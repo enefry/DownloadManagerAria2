@@ -1,0 +1,4 @@
+module libaria2 {
+  header "DMAria2.h"
+  export *
+}

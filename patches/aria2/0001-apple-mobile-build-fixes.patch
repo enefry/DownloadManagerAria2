@@ -1,0 +1,66 @@
+diff --git a/src/AppleTLSSession.cc b/src/AppleTLSSession.cc
+index f4174a5..4d0b016 100644
+--- a/src/AppleTLSSession.cc
++++ b/src/AppleTLSSession.cc
+@@ -39,6 +39,7 @@
+ #include <vector>
+ 
+ #include <CoreFoundation/CoreFoundation.h>
++#include <TargetConditionals.h>
+ 
+ #include "LogFactory.h"
+ #include "a2functional.h"
+@@ -489,7 +490,8 @@ AppleTLSSession::AppleTLSSession(AppleTLSContext* ctx)
+     return;
+   }
+ 
+-#ifndef CIPHER_NO_DHPARAM
++#if !defined(CIPHER_NO_DHPARAM) &&                                             \
++    !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+   lastError_ = SSLSetDiffieHellmanParams(sslCtx_, dhparam, sizeof(dhparam));
+   if (lastError_ != noErr) {
+     A2_LOG_WARN(fmt("AppleTLS: Failed to set DHParams: %s",
+@@ -497,7 +499,7 @@ AppleTLSSession::AppleTLSSession(AppleTLSContext* ctx)
+     // Engine will still generate some for us, so this is no problem, except
+     // it will take longer.
+   }
+-#endif // CIPHER_NO_DHPARAM
++#endif // !defined(CIPHER_NO_DHPARAM) && !TARGET_OS_IPHONE
+ }
+ 
+ AppleTLSSession::~AppleTLSSession()
+diff --git a/src/util.cc b/src/util.cc
+index 07502c0..1dd3c73 100644
+--- a/src/util.cc
++++ b/src/util.cc
+@@ -53,6 +53,10 @@
+ #  include <pwd.h>
+ #endif // HAVE_PWD_H
+ 
++#if defined(__APPLE__)
++#  include <TargetConditionals.h>
++#endif // defined(__APPLE__)
++
+ #include <array>
+ #include <cerrno>
+ #include <cassert>
+@@ -2235,6 +2239,11 @@ void executeHook(const std::string& command, a2_gid_t gid, size_t numFiles,
+   const std::string gidStr = GroupId::toHex(gid);
+   const std::string numFilesStr = util::uitos(numFiles);
+ #ifndef __MINGW32__
++#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
++  A2_LOG_WARN(fmt("User command hook is unsupported on this Apple platform: %s",
++                  command.c_str()));
++  return;
++#else  // !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+   A2_LOG_INFO(fmt("Executing user command: %s %s %s %s", command.c_str(),
+                   gidStr.c_str(), numFilesStr.c_str(), firstFilename.c_str()));
+   pid_t cpid = fork();
+@@ -2252,6 +2261,7 @@ void executeHook(const std::string& command, a2_gid_t gid, size_t numFiles,
+     A2_LOG_ERROR("fork() failed. Cannot execute user command.");
+   }
+   return;
++#endif // !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+ 
+ #else // __MINGW32__
+   PROCESS_INFORMATION pi;

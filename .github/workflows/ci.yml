@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    name: Build, verify, and test
+    runs-on: macos-15
+    steps:
+      - name: Checkout DownloadManagerAria2
+        uses: actions/checkout@v4
+        with:
+          path: DownloadManagerAria2
+
+      - name: Checkout DownloadManager
+        uses: actions/checkout@v4
+        with:
+          repository: enefry/DownloadManager
+          path: DownloadManager
+
+      - name: Checkout ConcurrencyCollection
+        uses: actions/checkout@v4
+        with:
+          repository: enefry/ConcurrencyCollection
+          path: ConcurrencyCollection
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Install build tools
+        run: brew install autoconf automake libtool
+
+      - name: Build libaria2 XCFramework
+        working-directory: DownloadManagerAria2
+        run: scripts/build-libaria2-xcframework.sh
+
+      - name: Verify libaria2 XCFramework
+        working-directory: DownloadManagerAria2
+        run: scripts/verify-libaria2-xcframework.sh
+
+      - name: Package libaria2 XCFramework
+        working-directory: DownloadManagerAria2
+        run: scripts/package-libaria2-xcframework.sh
+
+      - name: Build Swift package
+        working-directory: DownloadManagerAria2
+        env:
+          DOWNLOAD_MANAGER_PACKAGE_PATH: ../DownloadManager
+          LIBARIA2_XCFRAMEWORK_PATH: artifacts/libaria2/libaria2.xcframework
+          SWIFT_MODULE_CACHE_PATH: .build/ci-swift-module-cache
+          CLANG_MODULE_CACHE_PATH: .build/ci-swift-module-cache
+        run: |
+          swift build --target DownloadManager_Aria2Downloader \
+            --cache-path .build/ci-spm-cache \
+            --disable-index-store \
+            --jobs 1
+
+      - name: Test Swift package
+        working-directory: DownloadManagerAria2
+        env:
+          DOWNLOAD_MANAGER_PACKAGE_PATH: ../DownloadManager
+          LIBARIA2_XCFRAMEWORK_PATH: artifacts/libaria2/libaria2.xcframework
+          SWIFT_MODULE_CACHE_PATH: .build/ci-swift-module-cache
+          CLANG_MODULE_CACHE_PATH: .build/ci-swift-module-cache
+        run: |
+          swift test --filter Aria2DownloaderTests \
+            --cache-path .build/ci-spm-cache \
+            --disable-index-store \
+            --jobs 1
+
+      - name: Upload libaria2 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: libaria2-xcframework
+          path: |
+            DownloadManagerAria2/dist/libaria2.xcframework.zip
+            DownloadManagerAria2/dist/libaria2.xcframework.zip.checksum
+            DownloadManagerAria2/dist/libaria2.xcframework.zip.sha256
+          if-no-files-found: error
