@@ -59,13 +59,14 @@ libaria2_ensure_upstream_source() {
 
   for patch in "$root_dir"/patches/aria2/*.patch; do
     [[ -e "$patch" ]] || continue
-    if git -C "$aria2_dir" apply --check "$patch"; then
+    if git -C "$aria2_dir" apply --reverse --check "$patch" >/dev/null 2>&1; then
+      echo "aria2 patch already applied: $(basename "$patch")"
+    elif git -C "$aria2_dir" apply --check "$patch" >/dev/null 2>&1; then
       echo "Applying aria2 patch: $(basename "$patch")"
       git -C "$aria2_dir" apply "$patch"
-    elif git -C "$aria2_dir" apply --reverse --check "$patch"; then
-      echo "aria2 patch already applied: $(basename "$patch")"
     else
       echo "failed to apply aria2 patch: $patch" >&2
+      git -C "$aria2_dir" apply --check "$patch"
       return 1
     fi
   done

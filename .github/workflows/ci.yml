@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build, verify, and test
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: Checkout DownloadManagerAria2
         uses: actions/checkout@v4
@@ -27,8 +27,11 @@ jobs:
           repository: enefry/ConcurrencyCollection
           path: ConcurrencyCollection
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app
+      - name: Select Xcode 26
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.5.app || sudo xcode-select -s /Applications/Xcode_26.4.1.app || sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+          xcrun --sdk macosx --show-sdk-path
 
       - name: Install build tools
         run: brew install autoconf automake libtool

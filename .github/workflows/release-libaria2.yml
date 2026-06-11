@@ -19,7 +19,7 @@ permissions:
 jobs:
   release:
     name: Build, package, update manifest, and release
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: Checkout DownloadManagerAria2
         uses: actions/checkout@v4
@@ -39,8 +39,11 @@ jobs:
           repository: enefry/ConcurrencyCollection
           path: ConcurrencyCollection
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app
+      - name: Select Xcode 26
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.5.app || sudo xcode-select -s /Applications/Xcode_26.4.1.app || sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+          xcrun --sdk macosx --show-sdk-path
 
       - name: Install build tools
         run: brew install autoconf automake libtool
@@ -102,13 +105,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          notes="libaria2.xcframework.zip
-
-SwiftPM checksum:
-\`${LIBARIA2_CHECKSUM}\`
-
-URL:
-${LIBARIA2_URL}"
+          notes="$(printf 'libaria2.xcframework.zip\n\nSwiftPM checksum:\n`%s`\n\nURL:\n%s' "$LIBARIA2_CHECKSUM" "$LIBARIA2_URL")"
 
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" \
