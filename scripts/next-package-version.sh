@@ -25,6 +25,8 @@ explicit_version="${1:-}"
 version_line="${2:-auto}"
 initial_version="${3:-1.0.0}"
 branch_name="${4:-$(git rev-parse --abbrev-ref HEAD)}"
+version_line="${version_line:-auto}"
+initial_version="${initial_version:-1.0.0}"
 
 semver_re='^[0-9]+\.[0-9]+\.[0-9]+$'
 version_line_re='^[0-9]+\.[0-9]+$'
@@ -72,11 +74,13 @@ if [[ ! "$selected_line" =~ $version_line_re ]]; then
 fi
 
 latest_patch=""
-for version in "${versions[@]}"; do
-  if [[ "$version" == "$selected_line".* ]]; then
-    latest_patch="${version##*.}"
-  fi
-done
+if (( ${#versions[@]} > 0 )); then
+  for version in "${versions[@]}"; do
+    if [[ "$version" == "$selected_line".* ]]; then
+      latest_patch="${version##*.}"
+    fi
+  done
+fi
 
 if [[ -z "$latest_patch" ]]; then
   if [[ "$initial_version" == "$selected_line".* ]]; then

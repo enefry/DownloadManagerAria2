@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches-ignore:
+      - main
+      - master
+      - "v*_maint"
   pull_request:
 
 jobs:
