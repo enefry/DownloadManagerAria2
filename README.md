@@ -130,9 +130,11 @@ asset and commit the updated `Package.swift`.
 ## Versioning
 
 GitHub Actions publishes SwiftPM source package versions. The release workflow
-builds `libaria2.xcframework.zip`, updates `Package.swift` with the release
-asset URL and checksum, commits that manifest change, creates a semantic
-version tag, and attaches the zip/checksum files to the same GitHub Release.
+runs automatically on `main`, `master`, and `v*_maint` pushes, and can also be
+started manually. It builds `libaria2.xcframework.zip`, updates `Package.swift`
+with the release asset URL and checksum, commits that manifest change, creates
+a semantic version tag, and attaches the zip/checksum files to the same GitHub
+Release.
 
 `main`/`master` publish the latest major line and auto-increment the last
 version component. Maintenance branches named like `v1.0_maint` publish only

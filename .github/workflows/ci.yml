@@ -11,18 +11,18 @@ jobs:
     runs-on: macos-26
     steps:
       - name: Checkout DownloadManagerAria2
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.3
         with:
           path: DownloadManagerAria2
 
       - name: Checkout DownloadManager
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.3
         with:
           repository: enefry/DownloadManager
           path: DownloadManager
 
       - name: Checkout ConcurrencyCollection
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.3
         with:
           repository: enefry/ConcurrencyCollection
           path: ConcurrencyCollection
@@ -75,7 +75,7 @@ jobs:
             --jobs 1
 
       - name: Upload libaria2 package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: libaria2-xcframework
           path: |

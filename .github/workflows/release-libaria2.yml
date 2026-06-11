@@ -1,6 +1,11 @@
 name: Release libaria2
 
 on:
+  push:
+    branches:
+      - main
+      - master
+      - "v*_maint"
   workflow_dispatch:
     inputs:
       version:
@@ -26,22 +31,23 @@ concurrency:
 jobs:
   release:
     name: Build, package, update manifest, and release
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Release DownloadManagerAria2 ') }}
     runs-on: macos-26
     steps:
       - name: Checkout DownloadManagerAria2
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.3
         with:
           path: DownloadManagerAria2
           fetch-depth: 0
 
       - name: Checkout DownloadManager
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.3
         with:
           repository: enefry/DownloadManager
           path: DownloadManager
 
       - name: Checkout ConcurrencyCollection
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.3
         with:
           repository: enefry/ConcurrencyCollection
           path: ConcurrencyCollection
@@ -130,11 +136,20 @@ jobs:
           git push origin HEAD:${GITHUB_REF_NAME}
           git push origin "$RELEASE_TAG"
 
+      - name: Upload libaria2 package artifact
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: libaria2-xcframework-${{ steps.version.outputs.version }}
+          path: |
+            DownloadManagerAria2/dist/libaria2.xcframework.zip
+            DownloadManagerAria2/dist/libaria2.xcframework.zip.checksum
+            DownloadManagerAria2/dist/libaria2.xcframework.zip.sha256
+          if-no-files-found: error
+
       - name: Create GitHub Release
         working-directory: DownloadManagerAria2
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ env.RELEASE_TAG }}
         run: |
           notes="$(printf 'SwiftPM:\n`.package(url: "https://github.com/%s.git", from: "%s")`\n\nlibaria2.xcframework.zip\n\nSwiftPM checksum:\n`%s`\n\nURL:\n%s' "${{ github.repository }}" "$RELEASE_TAG" "$LIBARIA2_CHECKSUM" "$LIBARIA2_URL")"
 
