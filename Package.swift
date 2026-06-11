@@ -17,8 +17,8 @@ if let localPath = ProcessInfo.processInfo.environment["DOWNLOAD_MANAGER_PACKAGE
     downloadManagerDependency = .package(url: "https://github.com/enefry/DownloadManager.git", from: "1.0.0")
 }
 
-let defaultLibaria2BinaryURL = "https://github.com/enefry/DownloadManagerAria2/releases/download/libaria2-1.37.0/libaria2.xcframework.zip"
-let defaultLibaria2BinaryChecksum = "0000000000000000000000000000000000000000000000000000000000000000"
+let defaultLibaria2BinaryURL = "https://github.com/enefry/DownloadManagerAria2/releases/download/1.0.0/libaria2.xcframework.zip"
+let defaultLibaria2BinaryChecksum = "0fd1a32d1c0e2f525fb9f3d442f8584b0df6000d3c64327bbbe454da42a79828"
 
 let libaria2Target: Target
 if let localPath = ProcessInfo.processInfo.environment["LIBARIA2_XCFRAMEWORK_PATH"], !localPath.isEmpty {
